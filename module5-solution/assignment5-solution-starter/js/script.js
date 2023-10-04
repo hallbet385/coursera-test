@@ -85,9 +85,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
 showLoading("#main-content");
 $ajaxUtils.sendGetRequest(
   allCategoriesUrl,
-  function () { // ***** <---- TODO: STEP 1: Substitute [...] ******
-	buildAndShowHomeHTML(categories)
-  },
+  buildAndShowHomeHTML,  // ***** <---- TODO: STEP 1: Substitute [...] ******
   true); // Explicitly setting the flag to get JSON from server processed into an object literal
 });
 // *** finish **
@@ -105,7 +103,8 @@ function buildAndShowHomeHTML (categories) {
       // TODO: STEP 2: Here, call chooseRandomCategory, passing it retrieved 'categories'
       // Pay attention to what type of data that function returns vs what the chosenCategoryShortName
       // variable's name implies it expects.
-      var chosenCategoryShortName = ....
+      var chosenCategoryShortName = 
+		chooseRandomCategory (categories); 
 
 
       // TODO: STEP 3: Substitute {{randomCategoryShortName}} in the home html snippet with the
@@ -119,13 +118,17 @@ function buildAndShowHomeHTML (categories) {
       // Hint: you need to surround the chosen category short name with something before inserting
       // it into the home html snippet.
       //
-      // var homeHtmlToInsertIntoMainPage = ....
+	  var randomCategoryShortName = "" + categories[randomArrayIndex];
+      var homeHtmlToInsertIntoMainPage =       
+			insertProperty(homeHtmlUrl, "randomCategoryShortName", randomCategoryShortName);
 
 
       // TODO: STEP 4: Insert the produced HTML in STEP 3 into the main page
       // Use the existing insertHtml function for that purpose. Look through this code for an example
       // of how to do that.
       // ....
+	  
+	  insertHtml("#main-content", homeHtmlToInsertIntoMainPage);
 
     },
     false); // False here because we are getting just regular HTML from the server, so no need to process JSON.
@@ -143,6 +146,16 @@ function chooseRandomCategory (categories) {
 
 
 // Load the menu categories view
+//We are using our allCategoriesUrl defined above, that's the URL to firebaseio where the menu categories
+//are stored. Then we're passing buildAndShowCategoriesHTML, which is a value of a function that is
+//defined below. And since we don't really need ‘true’ after buildAndShowCategoriesHTML, it is
+//default, we are going to leave it off, which means that this function, buildAndShowCategoriesHTML, 
+//will get categories, (whatever the first argument in the function defined below which is categories
+//(what is defined in parenthesis where the function is declared), is going to be an object that is
+//converted from the JSON string. It's going to be a full blown object. 
+//So once this Ajax call is done in loadMenuCategories and the buildAndShowCategoriesHTML
+//function is called, we end up inside the buildAndShowCategoriesHTML function.
+
 dc.loadMenuCategories = function () {
   showLoading("#main-content");
   $ajaxUtils.sendGetRequest(
@@ -151,8 +164,16 @@ dc.loadMenuCategories = function () {
 };
 
 
-// Load the menu items view
-// 'categoryShort' is a short_name for a category
+// Load the menu items view. Based on the categoryShort that was clicked on.
+// Indivitual page of menu items once a category is clicked from the Menu Categories page
+// (ie. Lunch, Soup, Appetizers etc.) 
+// 'categoryShort' is a short_name for a category (ie. Lunch, Soup, Appetizers etc.) 
+// 'categoryShort'is what got passed into us when the user clicked on the particular Menu Category
+// short_name is referrenced in category-snippet.html
+//It is the property which we use to get at the data for a particular category
+// menuItemUrl + categoryShort + ".json" = the URL the Ajax Request to
+// buildAndShowMenuItemsHTML - this function processes the results of the
+// ajax request just above it. It processes the data we get back from the ajax request
 dc.loadMenuItems = function (categoryShort) {
   showLoading("#main-content");
   $ajaxUtils.sendGetRequest(
@@ -163,10 +184,11 @@ dc.loadMenuItems = function (categoryShort) {
 
 // Builds HTML for the categories page based on the data
 // from the server
+// buildCategoriesViewHtml function builds each individual category on the categories page
 function buildAndShowCategoriesHTML (categories) {
   // Load title snippet of categories page
   $ajaxUtils.sendGetRequest(
-    categoriesTitleHtml,
+    categoriesTitleHtml,  
     function (categoriesTitleHtml) {
       // Retrieve single category snippet
       $ajaxUtils.sendGetRequest(
@@ -181,22 +203,32 @@ function buildAndShowCategoriesHTML (categories) {
                                     categoryHtml);
           insertHtml("#main-content", categoriesViewHtml);
         },
-        false);
+        false); // do not process the html snippet as json
     },
-    false);
+    false);  // do not process the html snippet as json
 }
 
 
 // Using categories data and snippets html
-// build categories view HTML to be inserted into page
+// build categoriesViewHTML variable in above function 
+// to be inserted into the main categories page
+// finalHtml is the value that is returned - it is the variable categoriesTitleHtml
+// defined at the beginning of the self called function above (categories-title-snippet.html)
+// plus categoryHtml(category-snippet.html)
+// this function creates the html for the Menu Categories page that loads when you click the
+// menu box on the homepage 
 function buildCategoriesViewHtml(categories,
                                  categoriesTitleHtml,
                                  categoryHtml) {
 
+
+  //inserts a section with a class row  
   var finalHtml = categoriesTitleHtml;
   finalHtml += "<section class='row'>";
 
-  // Loop over categories
+  // Loop over categories object
+  //then we're looping over our categories object and every time we pull out 
+  //the name, the short name, and all we're doing then is calling insertProperty(). 
   for (var i = 0; i < categories.length; i++) {
     // Insert category values
     var html = categoryHtml;
@@ -213,12 +245,26 @@ function buildCategoriesViewHtml(categories,
 
   finalHtml += "</section>";
   return finalHtml;
+  // it then pops back up to buildAndShowCategoriesHTML function and is stored in the 
+  // variable defined categoriesViewHtml. It is then inserted into the div on the homepage
+  // that has the #main-content id 
 }
 
 
 
-// Builds HTML for the single category page based on the data
-// from the server
+// Builds HTML for the single category page (ie. Lunch, Soup, Appetizers etc.) 
+// based on the data from the server
+
+// categoryMenuItems is an object thats going to get returned because our json is going to get processed
+// then we have a double Ajax request that is similar to buildAndShowCategoriesHTML function above
+// First we get the menuItemsTitleHtml (menu-items-title.html snippet)
+// Then we get the menuItemHtml (menu-item.html snippet, this is a single menu item within the caategory that was clicked)
+// Then we call the buildMenuItemsViewHtml function. What is returned from that function is stored in the menuItemsViewHtml variable
+// buildMenuItemsViewHtml function builds the html for each individual menu item within the clicked category placing it on the single category page
+// we pass the buildMenuItemsViewHtml function a categoryMenuItems object. As well as the html snippet for the title (menuItemsTitleHtml) and
+// the html snippet for the one single menu item (menuItemHtml) 
+// Once  buildMenuItemsViewHtml function is complete and returns the final html for the individual menu items we use insertHtml to place the items 
+// into the #main-content element on the Menu Items page.
 function buildAndShowMenuItemsHTML (categoryMenuItems) {
   // Load title snippet of menu items page
   $ajaxUtils.sendGetRequest(
@@ -244,7 +290,23 @@ function buildAndShowMenuItemsHTML (categoryMenuItems) {
 
 
 // Using category and menu items data and snippets html
-// build menu items view HTML to be inserted into page
+// build individual menu items HTML to be inserted 
+// into the Menu Items page for a particular category
+
+//Unlike the previously similar function, buildCategoriesViewHtml,
+//we actually need to insert some values inside of the title of the individual items page. 
+//So, in this case, it's going to be ‘name’ and ‘special_instructions’. 
+//‘name’ and ‘special_instructions’ come from the categoryMenuItems object.
+//That's that object that was returned for us from the server as our JSON that 
+//was converted into an object, .category, that's our property, .name. 
+//Same thing in the second menuItemsTitleHtml = statement – 
+//categoryMenuItems.category.special_instructions. 
+//Once we insert those two things into the manuItemsTitleHtml, it is ready to be used for our final HTML.  
+//So that's why we're starting this final HTML (that is returned by this function, that is then inserted into the 
+// element on the single items page with an id of "#main-content") with this particular variable (finalHtml)
+//that's already kind of pre-inserted with the values of our object. 
+
+
 function buildMenuItemsViewHtml(categoryMenuItems,
                                 menuItemsTitleHtml,
                                 menuItemHtml) {
@@ -259,6 +321,7 @@ function buildMenuItemsViewHtml(categoryMenuItems,
                    categoryMenuItems.category.special_instructions);
 
   var finalHtml = menuItemsTitleHtml;
+  //inserts a section with a class row  
   finalHtml += "<section class='row'>";
 
   // Loop over menu items
