@@ -19,7 +19,7 @@ var allCategoriesUrl =
 var categoriesTitleHtml = "snippets/categories-title-snippet.html";
 var categoryHtml = "snippets/category-snippet.html";
 var menuItemsUrl =
-  "https://coursera-jhu-default-rtdb.firebaseio.com/menu_items/{cat_short_name.json";
+  "https://coursera-jhu-default-rtdb.firebaseio.com/menu_items/";
 var menuItemsTitleHtml = "snippets/menu-items-title.html";
 var menuItemHtml = "snippets/menu-item.html";
 
@@ -122,7 +122,7 @@ function buildAndShowHomeHTML (categories) {
       //var homeHtmlToInsertIntoMainPage = homeHtmlUrl;  
 	  //var randomCategoryShortName = chosenCategoryShortName.name;
 	  var homeHtmlToInsertIntoMainPage = 
-		insertProperty(homeHtmlUrl, "randomCategoryShortName", chosenCategoryShortName.short_name);
+		insertProperty(homeHtmlUrl, "randomCategoryShortName", chosenCategoryShortName.category.short_name);
 
 
       // TODO: STEP 4: Insert the produced HTML in STEP 3 into the main page
